@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Orquestador completo StatsAPI → Features → Ensemble → Predicción."""
 import os
+import sys
+
+# Asegura que src esté en el path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+
 from data_fetch import build_historical
 from features import build_features
 from models import train_ensemble
