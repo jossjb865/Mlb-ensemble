@@ -98,7 +98,11 @@ def fetch_schedule(start: str, end: str, game_type: str = "R") -> pd.DataFrame:
     df = pd.DataFrame(rows)
     if df.empty:
         return df
-    df["game_date"] = pd.to_datetime(df["game_date"])
+
+    # Aseguramos dtype datetime homogéneo (coerce para evitar valores mixtos que rompan sort)
+    df["game_date"] = pd.to_datetime(df["game_date"], errors="coerce")
+    # Eliminamos filas sin fecha válida
+    df = df.dropna(subset=["game_date"]).reset_index(drop=True)
     df = df.drop_duplicates(subset=["game_pk"]).sort_values("game_date").reset_index(drop=True)
     return df
 
@@ -139,7 +143,10 @@ def fetch_today_schedule() -> pd.DataFrame:
                 "total_runs": 0,
                 "home_win": 0,
             })
-    return pd.DataFrame(rows)
+    out = pd.DataFrame(rows)
+    if not out.empty:
+        out["game_date"] = pd.to_datetime(out["game_date"], errors="coerce")
+    return out
 
 def build_historical(start_year: int = 2023, end_year: int = 2025) -> pd.DataFrame:
     """Multi-temporada regular season."""
@@ -156,7 +163,9 @@ def build_historical(start_year: int = 2023, end_year: int = 2025) -> pd.DataFra
     if not frames:
         raise ValueError("No games retrieved from StatsAPI")
     full = pd.concat(frames, ignore_index=True)
-    full = full.drop_duplicates(subset=["game_pk"]).sort_values("game_date").reset_index(drop=True)
+    # Garantizar dtype datetime uniforme tras concatenar
+    full["game_date"] = pd.to_datetime(full["game_date"], errors="coerce")
+    full = full.dropna(subset=["game_date"]).drop_duplicates(subset=["game_pk"]).sort_values("game_date").reset_index(drop=True)
     return full
 
 if __name__ == "__main__":
