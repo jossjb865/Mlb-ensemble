@@ -1,0 +1,41 @@
+name: MLB Ensemble Daily
+
+on:
+  schedule:
+    - cron: "0 14 * * *"   # 14:00 UTC diario
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create folders
+        run: mkdir -p data models src
+
+      - name: Run full pipeline
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          python main.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-predictions-${{ github.run_id }}
+          path: |
+            predictions.csv
+            data/
+            models/
+          retention-days: 14
